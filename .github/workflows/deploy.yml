@@ -21,6 +21,7 @@ jobs:
           key: ${{ secrets.EC2_KEY }}
           script: |
             cd ~/hms-project
-            git pull origin master
+            git pull origin main
             pkill -f uvicorn || true
+            sleep 2
             nohup python3 -m uvicorn app:app --host 0.0.0.0 --port 8000 > output.log 2>&1 &
