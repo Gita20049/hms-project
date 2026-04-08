@@ -1,0 +1,35 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ec2-user
+          key: ${{ secrets.EC2_KEY }}
+          script: |
+            cd ~/hms-project
+            git pull origin main
+            pkill -f uvicorn || true
+            sleep 2
+
+            nohup python3 -m uvicorn app:app --host 0.0.0.0 --port 8000 > output.log 2>&1 &
+            UVICORN_PID=$!
+            sleep 3
+
+            if ! kill -0 $UVICORN_PID 2>/dev/null; then
+                echo "ERROR: Uvicorn failed to start"
+                cat output.log
+                exit 1
+            fi
+
+            echo "Uvicorn started successfully"
